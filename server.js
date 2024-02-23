@@ -7,12 +7,11 @@ const mongoose = require('mongoose');
 const getLifts = require('./getLifts');
 const liftModel = require('./lifts');
 const seed = require('./seed');
-const authorize = require('./authorize')
+const verifyUser = require('./authorize');
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(authorize);
 
 const PORT = process.env.PORT
 
@@ -30,6 +29,8 @@ db.once('open', () => {
 
 
 app.get('/', (req, res, next) => res.status(200).send('Default Route Working'));
+
+app.use(verifyUser);
 
 app.get('/lifts', getLifts);
 
