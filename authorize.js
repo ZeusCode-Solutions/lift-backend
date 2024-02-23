@@ -19,7 +19,7 @@ async function verifyUser(request, response, next) {
 
   try {
     const token = request.headers.authorization.split(' ')[1];
-    console.log(token)
+    // console.log(token)
     jwt.verify(token, getKey, {}, valid);
   } catch (error) {
     console.error('Error decoding token:', error);

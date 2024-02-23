@@ -40,7 +40,7 @@ app.delete('/lifts/:id', async (req, res, next) => {
         const liftId = req.params.id;
         const userEmail = req.user.email;
         if(!mongoose.Types.ObjectId.isValid(liftId)) {
-            return res.status(400).json({error: 'Invalid Book ID'});
+            return res.status(400).json({error: 'Invalid Lift ID'});
         }
 
         const deletedLift =await LiftModel.findOneAndDelete({_id: liftId, user: userEmail });
