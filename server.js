@@ -5,7 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const getLifts = require('./getLifts');
-const LiftModel = require('./lifts');
+const liftModel = require('./lifts');
 // const getExs = require('./getExs');
 // const exModel = require('./exercises');
 const seed = require('./seed');
@@ -43,7 +43,7 @@ app.delete('/lifts/:id', async (req, res, next) => {
             return res.status(400).json({error: 'Invalid Lift ID'});
         }
 
-        const deletedLift =await LiftModel.findOneAndDelete({_id: liftId, user: userEmail });
+        const deletedLift =await liftModel.findOneAndDelete({_id: liftId, user: userEmail });
 
         if (!deletedLift) {
             return res.status(404).json({ error: 'Lift Not Found'});
@@ -56,29 +56,52 @@ app.delete('/lifts/:id', async (req, res, next) => {
     });
 
 app.put('/lifts/:id', async (req, res, next) => {
-    try{
+    try {
         const liftId = req.params.id;
         const userEmail = req.user.email;
-        if(!mongoose.Types.ObjectId.isValid(liftId)) {
-            return res.status(400).json({error: 'Invalid Lift ID'});
+
+        console.log('Received request to update lift:', liftId);
+        console.log('User Email:', userEmail);
+        console.log('Request Body:', req.body);
+
+        if (!mongoose.Types.ObjectId.isValid(liftId)) {
+            return res.status(400).json({ error: 'Invalid Lift ID' });
         }
 
-        const updatingLift = await LiftModel.findOneAndUpdate(
-            { _id: liftId, user: userEmail },
-             req.body, 
-             { new: true });
+        const existingLift = await liftModel.findOne({ _id: liftId, user: userEmail });
+        console.log('Trying to find lift with ID:', liftId);
+        console.log('Existing Lift:', existingLift);
 
-        if (!updatingLift) {
-            return res.status(404).json({ error: 'Lift Not Found'});
+        if (!existingLift) {
+            console.log('Lift Not Found');
+            return res.status(404).json({ error: 'Lift Not Found' });
         }
-    
-        res.json({message: 'Lift Updated Successfully' , updatingLift});
-        } catch (error) {
-            res.status(500).json({ error: 'Internal Server Error', details: error.message});
+
+        if (req.body.exercises && Array.isArray(req.body.exercises)) {
+            existingLift.exercises = req.body.exercises.map(exercise => ({
+                exercise: exercise.movement,
+                weight: exercise.weight,
+                sets: exercise.sets,
+                reps: exercise.reps,
+            }));
         }
-    });
+
+
+        existingLift.title = req.body.title;
+        existingLift.description = req.body.description;
+
+        const updatingLift = await existingLift.save();
+        console.log('Updated Lift:', updatingLift);
+
+        res.json({ message: 'Lift Updated Successfully', updatingLift });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    }
+});
+
 app.post('/lifts', async (req, res, next) => {
     try {
+        console.log('This is post log:', req.body);
         const { title, description } = req.body;
         const userEmail = req.user.email;
         console.log('I am in the post route', userEmail)
@@ -86,7 +109,24 @@ app.post('/lifts', async (req, res, next) => {
         if (!title || !description ) {
             return res.status(400).json({ error: 'All fields are required'})
         }
-        const newLift = await LiftModel.create({ title, description, user: userEmail })
+        
+        const newLift = await liftModel.create({
+            title: req.body.title,
+            description: req.body.description,
+            exercises: req.body.exercises.map(exercise => {
+              const mappedExercise = {
+                exercise: exercise.movement, 
+                weight: exercise.weight,
+                sets: exercise.sets,
+                reps: exercise.reps,
+              };
+              console.log('Mapped Exercise:', mappedExercise); // Add this line
+              return mappedExercise;
+            }),
+            user: userEmail,
+          });
+  
+        console.log('New Lift Created:', newLift);
         res.status(201).json(newLift);
     } catch (error){
         console.error(error);
@@ -94,38 +134,43 @@ app.post('/lifts', async (req, res, next) => {
     }
 });
 
-app.put('/lifts/:id/exercises/exerciseId', async (req, res, next) => {
+app.put('/lifts/:id/exercises/:exerciseId', async (req, res, next) => {
     try {
-        const liftId = req.params.liftId;
-        const exerciseId = req.params.exerciseId;
-        const userEmail = req.user.email;
-        const { weight, sets, reps } = req.body
-        console.log('I am in the post route', userEmail)
-
-        const existingLift = await LiftModel.findOne({ _id: liftId, user: userEmail});
-        
-        if (!existingLift ) {
-            return res.status(400).json({ error: 'Lift Not Found'})
-        }
-        
-        const exerciseIndex = existingLift.exercises.findIndex(exercise => exercise._id == exerciseId)
-
-        if(exerciseIndex === -1){
-            return res.status(404).json({ error: 'Exercise Not Found'});
-        }
-
-        existingLift.exercises[exerciseIndex].weight = weight;
-        existingLift.exercises[exerciseIndex].sets = sets;
-        existingLift.exercises[exerciseIndex].reps = reps;
-
-        const updatedLift = await existingLift.save();
-        res.status(201).json(updatedLift);
-    } catch (error){
-        console.error(error);
-        res.status(500).json({error: 'Internal; Server Error', details: error.message})
+      const liftId = req.params.id;
+      const exerciseId = req.params.exerciseId;
+      const userEmail = req.user.email;
+      const { movement, weight, sets, reps } = req.body;
+  
+      console.log('this is put log', liftId, exerciseId);
+      console.log('Updated exercise data:', req.body);
+  
+      const existingLift = await liftModel.findById(liftId);
+      console.log(liftId)
+  
+      if (!existingLift) {
+        return res.status(400).json({ error: 'Lift Not Found' });
+      }
+  
+      const exerciseIndex = existingLift.exercises.findIndex(exercise => exercise._id == exerciseId);
+  
+      if (exerciseIndex === -1) {
+        return res.status(404).json({ error: 'Exercise Not Found' });
+      }
+  
+      existingLift.exercises[exerciseIndex].movement = movement;
+      existingLift.exercises[exerciseIndex].weight = weight;
+      existingLift.exercises[exerciseIndex].sets = sets;
+      existingLift.exercises[exerciseIndex].reps = reps;
+  
+      const updatedLift = await existingLift.save();
+      console.log('Updated Lift:', updatedLift);
+      res.status(201).json(updatedLift);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
-});
-
+  });
+  
 app.get('*', (req, res, next) => res.status(404).send('Resource Not Found'));
 
 app.listen(PORT, () => console.log(`listening on ${PORT}`));
