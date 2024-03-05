@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const {Schema} = mongoose;
 
 const exerciseSchema = new Schema({
-    exercise: String,
+    movement: String,
     weight: Number,
     sets: Number,
     reps: Number,
@@ -13,6 +13,7 @@ const exerciseSchema = new Schema({
 });
 
 const liftSchema = new Schema({
+    user: String,
     title: String,
     description: String,
     exercises: [exerciseSchema],

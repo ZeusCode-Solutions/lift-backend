@@ -9,6 +9,7 @@ mongoose.connect(`mongodb+srv://dstrow13:${process.env.MONGODBPASS}@cluster0.tbq
 async function seed() {
   try {
     await Lift.create({
+        user: "dstrow13@gmail.com",
         title: "Day 1",
         description: "Push Day",
         exercises: [
@@ -18,6 +19,7 @@ async function seed() {
         ],
       }).then(() => console.log('Saved Day 1'));
     await Lift.create({
+        user: "dstrow13@gmail.com",
         title: "Day 2",
         description: "Pull Day",
         exercises: [
@@ -28,6 +30,7 @@ async function seed() {
       }).then(() => console.log('Saved Day 2'));
   
       await Lift.create({
+        user: "dstrow13@gmail.com",
         title: "Day 3",
         description: "Leg Day",
         exercises: [
