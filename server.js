@@ -25,7 +25,7 @@ const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error'));
 db.once('open', () => {
     console.log('Mongoose is connected');
-    seed();
+    // seed();
 });
 
 app.get('/', (req, res) => res.status(200).send('Default Route Working'));
@@ -84,7 +84,6 @@ app.post('/lifts', async (req, res) => {
     try {
         const { title, description, exercises } = req.body;
         const userEmail = req.user.email;
-        console.log('I am in the post route', userEmail)
 
         if (!title || !description || !exercises || !exercises.length) {
             return res.status(400).json({ error: 'All fields are required' });
@@ -138,7 +137,6 @@ app.put('/lifts/:id/exercises/:exerciseId', async (req, res) => {
         existingLift.exercises.push(updatedExercise);
 
         const updatedLift = await existingLift.save();
-        console.log('Updated Lift:', updatedLift);
         res.status(201).json(updatedLift);
     } catch (error) {
         console.error(error);
