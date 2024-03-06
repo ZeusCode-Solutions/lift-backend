@@ -12,7 +12,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(verifyUser);
+// app.use(verifyUser);
 
 const PORT = process.env.PORT;
 
